@@ -1,7 +1,7 @@
 all: clean cache-sim
 
 cache-sim: cache-sim.o 
-	gcc -o cache-sim cache-sim.c
+	g++ -o cache-sim cache-sim.cpp
 
 clean:
 	rm -rf cache-sim cache-sim.o
