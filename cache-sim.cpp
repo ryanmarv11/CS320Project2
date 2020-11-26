@@ -237,11 +237,10 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 	{
 		for(int j = 0; j < numWays; j++)
 		{
-			cacheTable[i][j] = 0;
+			cacheTable[i][j] = -1;
 		}
 	}
 	cout << "Cache table is initialized." << endl;
-
 	for(int i = 0; i < size; i++)
 	{
 
@@ -252,19 +251,35 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 			if(cacheTable[index][n] == tag)
 			{
 				numHits++;
-				hitSwitch = 1;
+				//hitSwitch = 1;
 				mostRecentlyUsed = n;
 				LRU = updateLRU(LRU, index, mostRecentlyUsed);
 				break; //end the loop
 			}
-			else if(n == (numWays - 1) && hitSwitch == 0)//there is a miss
+			else if(n == (numWays - 1) /*hitSwitch*/)//there is a miss
 			{
-				LRU = updateLRU(LRU, index, mostRecentlyUsed);
-				cacheTable[index][LRU[index].at(0)] = tag;
-
+				int j = 0, junkFlag = 0;
+				for(j = 0; j < numWays; j++)
+				{
+					if(cacheTable[index][j] == -1)
+					{
+						cacheTable[index][j] = tag;
+						junkFlag = 1;
+						break;
+					}
+				}
+				if(junkFlag == 0)
+				{
+					cacheTable[index][LRU[index].at(0)] = tag;
+				}
+				if(j == numWays)
+				{
+					j = 0;
+				}
+				LRU = updateLRU(LRU, index, LRU[index][j]);
 			}
 		}
-		hitSwitch = 0;
+		//hitSwitch = 0;
 	}
 	return numHits;
 }
@@ -272,8 +287,13 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 vector<vector<int>> updateLRU(vector<vector<int>> LRU, int index, int way)
 {
 	int temp = LRU[index][way];
+	//cout << "Before erase. ";
+	//printVector(LRU[index]);
 	LRU[index].erase(LRU[index].begin() + way);
+	//cout << "Erased.";
+	//printVector(LRU[index]);
 	LRU[index].push_back(temp);
+	//cout << "Put back. " << endl;
 	return LRU;
 }
 
