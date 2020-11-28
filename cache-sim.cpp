@@ -51,12 +51,12 @@ int main(int argc, char* argv[])
 	int* setAssociative = (int *)malloc(sizeof(int) * 4);
 	setAssociative[0] = setAssociativeCache(instructions, size, 2);
 	cout << "Done with 2 way." << endl;
-	setAssociative[1] = setAssociativeCache(instructions, size, 4);
+	/*setAssociative[1] = setAssociativeCache(instructions, size, 4);
 	cout << "Done with 4 way." << endl;
 	setAssociative[2] = setAssociativeCache(instructions, size, 8);
 	cout << "Done with 8 way." << endl;
 	setAssociative[3] = setAssociativeCache(instructions, size, 16);
-	cout << "Done with 16 way." << endl;
+	cout << "Done with 16 way." << endl;*/
 	
 
 	for(int i = 0; i < 4; i++)
@@ -245,7 +245,6 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 		if(i % 50000 == 0)
 			cout << i << " instructions complete." << endl;
 
-
 		index = (instructions[i]->address / 32) % numSets;
 		tag = instructions[i]->address >>(int)(log2(numSets) + 5);
 		for(int n = 0; n < numWays; n++)
@@ -265,18 +264,15 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 					{
 						cacheTable[index][j] = tag;
 						junkFlag = 1;
+						LRU = updateLRU(LRU, index, LRU[index][j]);
 						break;
 					}
 				}
 				if(junkFlag == 0)
 				{
 					cacheTable[index][LRU[index][0]] = tag;
+					LRU = updateLRU(LRU,index, LRU[index][0]);
 				}
-				if(j == numWays)
-				{
-					j = 0;
-				}
-				LRU = updateLRU(LRU, index, LRU[index][j]);
 			}
 		}
 	}
@@ -285,19 +281,17 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 
 vector<vector<int>> updateLRU(vector<vector<int>> LRU, int index, int way)
 {
-	int tempIndex, tempValue;
-	
+	int tempIndex;
 	for(int i = 0; i < LRU[index].size(); i++)
 	{
 		if(LRU[index][i] == way)
 		{
 			tempIndex = i;
-			tempValue = LRU[index][i];
 			break;
 		}
 	}
 	LRU[index].erase(LRU[index].begin() + tempIndex);
-	LRU[index].push_back(tempValue);
+	LRU[index].push_back(way);
 	return LRU;
 }
 
