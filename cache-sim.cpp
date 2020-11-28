@@ -21,9 +21,8 @@ typedef struct Node
 
 using namespace std;
 
-
-struct Instruction** parse(char* argv[], int size);
 int getSize(char* argv[]);
+struct Instruction** parse(char* argv[], int size);
 int* directMappedCache(struct Instruction** instructions, int size);
 int setAssociativeCache(struct Instruction** instructions, int size, int numWays);
 vector<vector<int>> updateLRU(vector<vector<int>> LRU, int index, int way);
@@ -52,18 +51,19 @@ int main(int argc, char* argv[])
 	int* setAssociative = (int *)malloc(sizeof(int) * 4);
 	setAssociative[0] = setAssociativeCache(instructions, size, 2);
 	cout << "Done with 2 way." << endl;
-	/*setAssociative[1] = setAssociativeCache(instructions, size, 4);
+	setAssociative[1] = setAssociativeCache(instructions, size, 4);
 	cout << "Done with 4 way." << endl;
 	setAssociative[2] = setAssociativeCache(instructions, size, 8);
 	cout << "Done with 8 way." << endl;
 	setAssociative[3] = setAssociativeCache(instructions, size, 16);
 	cout << "Done with 16 way." << endl;
-	*/
+	
 
-	for(int i = 0; i < 1; i++)
+	for(int i = 0; i < 4; i++)
 	{
 		printf("setAssocativeCache[%d]: %d\n", i, setAssociative[i]);
 	}
+
 
 	return 0;
 
@@ -219,7 +219,7 @@ int* directMappedCache(struct Instruction** instructions, int size)
 
 int setAssociativeCache(struct Instruction** instructions, int size, int numWays)
 {
-	int numSets = 512 / numWays, numHits = 0, hitSwitch = 0, index, tag, mostRecentlyUsed = 0;
+	int numSets = 512 / numWays, numHits = 0, index, tag;
 	int cacheTable[numSets][numWays];
 	vector<vector<int>> LRU(numSets, vector<int>(numWays));
 
@@ -231,7 +231,6 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 		}
 	}
 	cout << "LRU is initialized." << endl;
-	
 
 	for(int i = 0; i < numSets; i++)
 	{
@@ -243,6 +242,9 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 	cout << "Cache table is initialized." << endl;
 	for(int i = 0; i < size; i++)
 	{
+		if(i % 50000 == 0)
+			cout << i << " instructions complete." << endl;
+
 
 		index = (instructions[i]->address / 32) % numSets;
 		tag = instructions[i]->address >>(int)(log2(numSets) + 5);
@@ -251,12 +253,10 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 			if(cacheTable[index][n] == tag)
 			{
 				numHits++;
-				//hitSwitch = 1;
-				mostRecentlyUsed = n;
-				LRU = updateLRU(LRU, index, mostRecentlyUsed);
+				LRU = updateLRU(LRU, index, n);
 				break; //end the loop
 			}
-			else if(n == (numWays - 1) /*hitSwitch*/)//there is a miss
+			else if(n == numWays - 1)//there is a miss
 			{
 				int j = 0, junkFlag = 0;
 				for(j = 0; j < numWays; j++)
@@ -270,7 +270,7 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 				}
 				if(junkFlag == 0)
 				{
-					cacheTable[index][LRU[index].at(0)] = tag;
+					cacheTable[index][LRU[index][0]] = tag;
 				}
 				if(j == numWays)
 				{
@@ -279,21 +279,25 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 				LRU = updateLRU(LRU, index, LRU[index][j]);
 			}
 		}
-		//hitSwitch = 0;
 	}
 	return numHits;
 }
 
 vector<vector<int>> updateLRU(vector<vector<int>> LRU, int index, int way)
 {
-	int temp = LRU[index][way];
-	//cout << "Before erase. ";
-	//printVector(LRU[index]);
-	LRU[index].erase(LRU[index].begin() + way);
-	//cout << "Erased.";
-	//printVector(LRU[index]);
-	LRU[index].push_back(temp);
-	//cout << "Put back. " << endl;
+	int tempIndex, tempValue;
+	
+	for(int i = 0; i < LRU[index].size(); i++)
+	{
+		if(LRU[index][i] == way)
+		{
+			tempIndex = i;
+			tempValue = LRU[index][i];
+			break;
+		}
+	}
+	LRU[index].erase(LRU[index].begin() + tempIndex);
+	LRU[index].push_back(tempValue);
 	return LRU;
 }
 
