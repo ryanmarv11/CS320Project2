@@ -24,8 +24,10 @@ using namespace std;
 int getSize(char* argv[]);
 struct Instruction** parse(char* argv[], int size);
 int* directMappedCache(struct Instruction** instructions, int size);
-int setAssociativeCache(struct Instruction** instructions, int size, int numWays, int mode);
+int setAssociativeCache(struct Instruction** instructions, int size, int numWays);
+int fullyAssociativeLRU(struct Instruction** instructions, int size);
 vector<vector<int>> updateLRU(vector<vector<int>> LRU, int index, int way);
+vector<int> updateLRU(vector<int> LRU, int way);
 void printVector(vector<int> LRU);
 
 int main(int argc, char* argv[])
@@ -49,20 +51,21 @@ int main(int argc, char* argv[])
 	}
 
 	int* setAssociative = (int *)malloc(sizeof(int) * 4);
-	setAssociative[0] = setAssociativeCache(instructions, size, 2, 0);
+	/*setAssociative[0] = setAssociativeCache(instructions, size, 2);
 	cout << "Done with 2 way." << endl;
-	setAssociative[1] = setAssociativeCache(instructions, size, 4,0);
+	setAssociative[1] = setAssociativeCache(instructions, size, 4);
 	cout << "Done with 4 way." << endl;
-	setAssociative[2] = setAssociativeCache(instructions, size, 8,0);
+	setAssociative[2] = setAssociativeCache(instructions, size, 8);
 	cout << "Done with 8 way." << endl;
-	setAssociative[3] = setAssociativeCache(instructions, size, 16,0);
+	setAssociative[3] = setAssociativeCache(instructions, size, 16);
 	cout << "Done with 16 way." << endl;
 	
 
 	for(int i = 0; i < 4; i++)
 	{
 		printf("setAssocativeCache[%d]: %d\n", i, setAssociative[i]);
-	}
+	}*/
+	cout << "Fully Associative" << fullyAssociativeLRU(instructions, size) << endl;
 
 
 	return 0;
@@ -217,7 +220,7 @@ int* directMappedCache(struct Instruction** instructions, int size)
 	return numHits;
 }
 
-int setAssociativeCache(struct Instruction** instructions, int size, int numWays, int mode)
+int setAssociativeCache(struct Instruction** instructions, int size, int numWays)
 {
 	int numSets = 512 / numWays, numHits = 0, index, tag;
 	int cacheTable[numSets][numWays];
@@ -294,6 +297,70 @@ vector<vector<int>> updateLRU(vector<vector<int>> LRU, int index, int way)
 	LRU[index].push_back(way);
 	return LRU;
 }
+
+int fullyAssociativeLRU(struct Instruction** instructions, int size)
+{
+	int cacheTable[512][1]; //doing it this way so easier to visualize
+	long tag;
+	vector<int> LRU;
+	for(int i = 0; i < 512; i++)
+	{
+		cacheTable[i][0] = -1;
+		LRU.push_back(i);
+	}
+	cout << "\nInitialized" << endl;
+	int numHits = 0, j, k, l, tempValue; 
+	for(int i = 0; i < size; i++)
+	{
+		tag = instructions[i]->address >> 5;
+		for(j = 0; j < 512; j++)
+		{
+			if(cacheTable[j][0] == tag)
+			{
+				numHits++;
+				LRU = updateLRU(LRU, j);
+				break;
+			}
+		}
+		if(j == 512)
+		{
+			for(l = 0; l < 512; l++)
+			{
+				if(cacheTable[l][0] == -1) //junk value present
+				{
+					cacheTable[l][0] = tag;
+					LRU = updateLRU(LRU, l);
+					break;
+				}
+			}
+			if(l == 512)
+			{
+				cacheTable[LRU[0]][0] = tag;
+				LRU = updateLRU(LRU, LRU[0]);
+			}
+		}
+			
+	}
+				
+	return numHits; 
+}
+
+vector<int> updateLRU(vector<int> LRU, int way)
+{
+	int tempIndex;
+	for(int i = 0; i < 512; i++)
+	{
+		if(LRU[i] == way)
+		{
+			tempIndex = i;
+			break;
+		}
+	}
+	LRU.erase(LRU.begin() + tempIndex);
+	LRU.push_back(way);
+	return LRU;
+}
+	
 
 void printVector(vector<int> LRU)
 {
