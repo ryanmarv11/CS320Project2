@@ -28,6 +28,7 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 int fullyAssociativeLRU(struct Instruction** instructions, int size);
 vector<vector<int>> updateLRU(vector<vector<int>> LRU, int index, int way);
 vector<int> updateLRU(vector<int> LRU, int way);
+int storeMissNoWrite(struct Instruction** instructions, int size, int numWays);
 void printVector(vector<int> LRU);
 
 int main(int argc, char* argv[])
@@ -65,7 +66,19 @@ int main(int argc, char* argv[])
 	{
 		printf("setAssocativeCache[%d]: %d\n", i, setAssociative[i]);
 	}*/
-	cout << "Fully Associative" << fullyAssociativeLRU(instructions, size) << endl;
+	//cout << "Fully Associative" << fullyAssociativeLRU(instructions, size) << endl;
+	int* missNoWrite = (int *)malloc(sizeof(int) * 4);
+	missNoWrite[0] = storeMissNoWrite(instructions, size, 2);
+	cout << "First done." << endl;
+	missNoWrite[1] = storeMissNoWrite(instructions, size, 4);
+	cout << "Second done." << endl;
+	missNoWrite[2] = storeMissNoWrite(instructions, size, 8);
+	cout << "Third done." << endl;
+	missNoWrite[3] = storeMissNoWrite(instructions, size, 16);
+	for(int i = 0; i < 4; i++)
+	{
+		cout << "missNoWrite[" << i << "]: " << missNoWrite[i] << endl;
+	}
 
 
 	return 0;
@@ -359,6 +372,66 @@ vector<int> updateLRU(vector<int> LRU, int way)
 	LRU.erase(LRU.begin() + tempIndex);
 	LRU.push_back(way);
 	return LRU;
+}
+
+int storeMissNoWrite(struct Instruction** instructions, int size, int numWays)
+{
+	int numSets = 512 / numWays, numHits = 0, index, tag;
+	int cacheTable[numSets][numWays];
+	vector<vector<int>> LRU(numSets, vector<int>(numWays));
+
+	for(int i = 0; i < numSets; i++)
+	{
+		for(int j = 0; j < numWays; j++)
+		{
+			LRU[i][j] = j;
+		}
+	}
+	cout << "LRU is initialized." << endl;
+
+	for(int i = 0; i < numSets; i++)
+	{
+		for(int j = 0; j < numWays; j++)
+		{
+			cacheTable[i][j] = -1;
+		}
+	}
+	cout << "Cache table is initialized." << endl;
+	for(int i = 0; i < size; i++)
+	{
+
+		index = (instructions[i]->address / 32) % numSets;
+		tag = instructions[i]->address >>(int)(log2(numSets) + 5);
+		for(int n = 0; n < numWays; n++)
+		{
+			if(cacheTable[index][n] == tag)
+			{
+				numHits++;
+				LRU = updateLRU(LRU, index, n);
+				break; //end the loop
+			}
+			else if(n == numWays - 1 && instructions[i]->operation == 0)//there is a miss
+			{
+				int j = 0, junkFlag = 0;
+				for(j = 0; j < numWays; j++)
+				{
+					if(cacheTable[index][j] == -1)
+					{
+						cacheTable[index][j] = tag;
+						junkFlag = 1;
+						LRU = updateLRU(LRU, index, LRU[index][j]);
+						break;
+					}
+				}
+				if(junkFlag == 0)
+				{
+					cacheTable[index][LRU[index][0]] = tag;
+					LRU = updateLRU(LRU,index, LRU[index][0]);
+				}
+			}
+		}
+	}
+	return numHits;
 }
 	
 
