@@ -31,62 +31,51 @@ vector<int> updateLRU(vector<int> LRU, int way);
 int storeMissNoWrite(struct Instruction** instructions, int size, int numWays);
 int setAssociativeWithPrefetching(struct Instruction** instructions, int size, int numWays);
 int prefetchOnMiss(struct Instruction** instructions, int size, int numWays);
+void writeToOutput(char* argv[], int* results, int size);
 void printVector(vector<int> LRU);
 
 int main(int argc, char* argv[])
 {
 	int size = getSize(argv);
-	printf("There are %d lines\n", size);
 	struct Instruction **instructions = parse(argv, size);
-	int* answers = (int *)malloc(sizeof(int) * 23);
+	int* answers = (int *)malloc(sizeof(int) * 22);
 
 	//part 1
 	int* direct = directMappedCache(instructions, size);
-	for(int i = 0; i < 5; i++)
+	for(int i = 0; i < 4; i++)
 	{
 		answers[i] = direct[i];
 	}
 
 	//part 2
-	answers[5] = setAssociativeCache(instructions, size, 2);
-	answers[6] = setAssociativeCache(instructions, size, 4);
-	answers[7] = setAssociativeCache(instructions, size, 8);
-	answers[8] = setAssociativeCache(instructions, size, 16);
+	answers[4] = setAssociativeCache(instructions, size, 2);
+	answers[5] = setAssociativeCache(instructions, size, 4);
+	answers[6] = setAssociativeCache(instructions, size, 8);
+	answers[7] = setAssociativeCache(instructions, size, 16);
 
 	//part 3
-	answers[9] = fullyAssociativeLRU(instructions, size);
-	answers[10] = size - 123456; //if by some miracle this returns the right answer I'll be shocked to my core.
+	answers[8] = fullyAssociativeLRU(instructions, size);
+	answers[9] = size - 123456; //if by some miracle this returns the right answer I'll be shocked to my core.
 	
 	//part 4
-	answers[11] = storeMissNoWrite(instructions, size, 2);
-	answers[12] = storeMissNoWrite(instructions, size, 4);
-	answers[13] = storeMissNoWrite(instructions, size, 8);
-	answers[14] = storeMissNoWrite(instructions, size, 16);
+	answers[10] = storeMissNoWrite(instructions, size, 2);
+	answers[11] = storeMissNoWrite(instructions, size, 4);
+	answers[12] = storeMissNoWrite(instructions, size, 8);
+	answers[13] = storeMissNoWrite(instructions, size, 16);
 
 	//part 5
-	answers[15] = setAssociativeWithPrefetching(instructions, size, 2);
-	answers[16] = setAssociativeWithPrefetching(instructions, size, 4);
-	answers[17] = setAssociativeWithPrefetching(instructions, size, 8);
-	answers[18] = setAssociativeWithPrefetching(instructions, size, 16);
+	answers[14] = setAssociativeWithPrefetching(instructions, size, 2);
+	answers[15] = setAssociativeWithPrefetching(instructions, size, 4);
+	answers[16] = setAssociativeWithPrefetching(instructions, size, 8);
+	answers[17] = setAssociativeWithPrefetching(instructions, size, 16);
 
 	//part 6
-	answers[19] = prefetchOnMiss(instructions, size, 2);
-	answers[20] = prefetchOnMiss(instructions, size, 4);
-	answers[21] = prefetchOnMiss(instructions, size, 8);
-	answers[22] = prefetchOnMiss(instructions, size, 16);
+	answers[18] = prefetchOnMiss(instructions, size, 2);
+	answers[19] = prefetchOnMiss(instructions, size, 4);
+	answers[20] = prefetchOnMiss(instructions, size, 8);
+	answers[21] = prefetchOnMiss(instructions, size, 16);
 	
-	for(int i = 0; i < 23; i++)
-	{
-		printf("%d, ", answers[i]);
-		if(i == 4 || i == 8 || i == 10 || i == 14 || i == 18 || i == 22)
-		{
-			printf("\n");
-		}
-	}
-
-	
-
-
+	writeToOutput(argv, answers, size);
 
 	return 0;
 
@@ -129,8 +118,6 @@ struct Instruction** parse(char* argv[], int size)
 	{
 		instructions[i] = (struct Instruction*)malloc(sizeof(struct Instruction));
 	}
-
-	printf("instructions initialized\n");
 
 	int instructionIterator = 0, tempAddressIterator, operationSwitch = 0, whitespaceSwitch = 0, addressSwitch = 0;
 	char c, tempAddress[8], *eptr;
@@ -253,7 +240,7 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 			LRU[i][j] = j;
 		}
 	}
-	cout << "LRU is initialized." << endl;
+
 
 	for(int i = 0; i < numSets; i++)
 	{
@@ -262,11 +249,8 @@ int setAssociativeCache(struct Instruction** instructions, int size, int numWays
 			cacheTable[i][j] = -1;
 		}
 	}
-	cout << "Cache table is initialized." << endl;
 	for(int i = 0; i < size; i++)
 	{
-		if(i % 50000 == 0)
-			cout << i << " instructions complete." << endl;
 
 		index = (instructions[i]->address / 32) % numSets;
 		tag = instructions[i]->address >>(int)(log2(numSets) + 5);
@@ -328,7 +312,6 @@ int fullyAssociativeLRU(struct Instruction** instructions, int size)
 		cacheTable[i][0] = -1;
 		LRU.push_back(i);
 	}
-	cout << "\nInitialized" << endl;
 	int numHits = 0, j, k, l, tempValue; 
 	for(int i = 0; i < size; i++)
 	{
@@ -394,7 +377,6 @@ int storeMissNoWrite(struct Instruction** instructions, int size, int numWays)
 			LRU[i][j] = j;
 		}
 	}
-	cout << "LRU is initialized." << endl;
 
 	for(int i = 0; i < numSets; i++)
 	{
@@ -403,7 +385,6 @@ int storeMissNoWrite(struct Instruction** instructions, int size, int numWays)
 			cacheTable[i][j] = -1;
 		}
 	}
-	cout << "Cache table is initialized." << endl;
 	for(int i = 0; i < size; i++)
 	{
 
@@ -454,7 +435,6 @@ int setAssociativeWithPrefetching(struct Instruction** instructions, int size, i
 			LRU[i][j] = j;
 		}
 	}
-	cout << "LRU is initialized." << endl;
 
 	for(int i = 0; i < numSets; i++)
 	{
@@ -463,11 +443,8 @@ int setAssociativeWithPrefetching(struct Instruction** instructions, int size, i
 			cacheTable[i][j] = -1;
 		}
 	}
-	cout << "Cache table is initialized." << endl;
 	for(int i = 0; i < size; i++)
 	{
-		if(i % 50000 == 0)
-			cout << i << " instructions complete." << endl;
 		index = (instructions[i]->address / 32) % numSets;
 		tag = instructions[i]->address >>(int)(log2(numSets) + 5);
 		secondAddress = instructions[i]->address + 32;
@@ -545,7 +522,7 @@ int prefetchOnMiss(struct Instruction** instructions, int size, int numWays)
 			LRU[i][j] = j;
 		}
 	}
-	cout << "LRU is initialized." << endl;
+
 
 	for(int i = 0; i < numSets; i++)
 	{
@@ -554,11 +531,9 @@ int prefetchOnMiss(struct Instruction** instructions, int size, int numWays)
 			cacheTable[i][j] = -1;
 		}
 	}
-	cout << "Cache table is initialized." << endl;
+
 	for(int i = 0; i < size; i++)
 	{
-		if(i % 50000 == 0)
-			cout << i << " instructions complete." << endl;
 		index = (instructions[i]->address / 32) % numSets;
 		tag = instructions[i]->address >>(int)(log2(numSets) + 5);
 		secondAddress = instructions[i]->address + 32;
@@ -626,6 +601,28 @@ int prefetchOnMiss(struct Instruction** instructions, int size, int numWays)
 		}
 	}
 	return numHits;
+}
+
+void writeToOutput(char* argv[], int* results, int size)
+{
+	FILE *fp;
+	fp = fopen(argv[2], "w");
+	if(fp == NULL)
+	{
+		printf("ERROR: Cannot open file.\n");
+		exit(1);
+	}
+
+	for(int i = 0; i < 22; i++)
+	{
+		fprintf(fp, "%d,%d; ", results[i], size);
+		if(i == 3 || i == 7 || i == 8 || i == 9 || i == 13 || i == 17 || i == 21)
+		{
+			fprintf(fp, "\n");
+		}
+	}
+	fprintf(fp, "\n");
+	return;
 }
 
 	
